@@ -15,11 +15,29 @@ def sub(state, inst):
 	"""
 	parts = inst.split(' ')
 	op = parts[0]
+	# name of reg
 	lhs = parts[1][:-1]
+	# name of reg or imm
 	rhs = parts[2]
 
+	old_val = getattr(state, lhs)
+	try:
+		new_val = getattr(state, lhs) - getattr(state, rhs)
+	except:
+		new_val = getattr(state, lhs) - int(rhs, 16)
+	
+	setattr(state, lhs, new_val)
 
 	"The OF, SF, ZF, AF, PF, and CF flags are set according to the result."
+	state.of = False
+	state.af = False
+	
+	state.sf = If(new_val < 0, True, False)
+	state.zf = If(new_val == 0, True, False)
+	state.cf = If(((old_val >> 31) & 1) ^ ((new_val >> 31) & 1) == 1, True, False)
+
+	state.eip += 1
+
 	return state
 
 if __name__ == "__main__":
