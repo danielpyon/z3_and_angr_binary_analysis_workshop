@@ -28,14 +28,9 @@ def solve(puzzle):
                 continue
             s.add(board[i][j] == constraint)
 
-    # rows unique
     for i in range(9):
-        # all vals in board[i] must be distinct
-        s.add(Distinct([board[i][j] for j in range(9)]))
-    
-    # cols unique
-    for i in range(9):
-        s.add(Distinct([board[j][i] for j in range(9)]))
+        s.add(Distinct([board[i][j] for j in range(9)])) # distinct rows
+        s.add(Distinct([board[j][i] for j in range(9)])) # distinct cols
     
     # each square must use 1-9 once
     for x in range(0, 9, 3):
