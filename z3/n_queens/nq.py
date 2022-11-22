@@ -19,9 +19,14 @@ if __name__ == '__main__':
     s.add(Distinct(rows))
     s.add(Distinct(columns))
 
+    """
     for i in range(n-1):
         for j in range(i+1,n):
             s.add(Abs(columns[i] - columns[j]) != Abs(rows[i] - rows[j]))
+    """
+
+    # c[i]+r[i] must be different
+    # c[i]-r[i] must be different
 
     if s.check() == sat:
         m = s.model()
