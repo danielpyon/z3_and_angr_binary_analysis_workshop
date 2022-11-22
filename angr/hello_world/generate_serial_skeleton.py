@@ -36,8 +36,17 @@ def solve_one(base):
 
 # Generate valid argument for 'valid_serial_two'
 def solve_two(base):
-	pass
+	p = angr.Project('serial.o', load_options={'auto_load_libs': False})
+	state = p.factory.blank_state(addr=base+0x802)
+	sm = p.factory.simulation_manager(state)
+	sm.explore(find=base+0x870, avoid=base+0xaf5)
+	found = sm.found[0]
 
+	memory = found.memory.load(found.regs.rdi, 64)
+	answer = found.solver.eval(memory, cast_to=bytes)
+	out = answer[:answer.index(b'\x00')]
+	print(out.hex())
+	print(out)
 
 if __name__ == "__main__":
 	base = 0x400000
