@@ -71,20 +71,62 @@ def jnz(state, inst):
 
 
 def or_inst(state, inst):
+	parts = inst.split(' ')
+	op = parts[0]
+	lhs = parts[1][:-1]
+	rhs = parts[2]
+
+	try:
+		new_val = getattr(state, lhs) | getattr(state, rhs)
+	except:
+		new_val = getattr(state, lhs) | int(rhs, 16)
+	setattr(state, lhs, new_val)
+	state.of = False
+	state.cf = False
+	state.sf = If(new_val < 0, True, False)
+	zf_state = If(new_val == 0, True, False)
+	state.zf = zf_state
+	state.eip += 1
 	return state
 
 def sub(state, inst):
+	parts = inst.split(' ')
+	op = parts[0]
+	lhs = parts[1][:-1]
+	rhs = parts[2]
+
+	old_val = getattr(state, lhs)
+
+	try:
+		rhs_val = getattr(state, rhs) 
+	except:
+		rhs_val = int(rhs, 16)
+	new_val = old_val - rhs_val
+	setattr(state, lhs, new_val)
+
+	state.of = If((((old_val >> 31) & 1)  ^ ((new_val >> 31) & 1)) == 1, True, False)
+	state.cf = If(old_val < rhs_val, True, False)
+	zf_state = If(new_val == 0, True, False)
+	state.zf = zf_state
+	sf_state = If(new_val < 0, True, False)
+	state.sf = sf_state
+	state.eip += 1
 	return state
 
 def jg(state, inst):
+	parts = inst.split(' ')
+	op = parts[0]
+	dst = int(parts[1], 16)
+	new_eip = If(And(state.zf == False, state.sf == state.of), dst, state.eip + 1)
+	state.eip = new_eip
 	return state
 
-def run_prog(instrutions):
+def run_prog(instructions):
 	state = Registers()
 	state.eip = 0
 	s_one = Solver()
 	s_two = Solver()
-	for inst in instrutions:
+	for inst in instructions:
 		parts = inst.split(' ')
 		op = parts[0]
 		if op == 'add':
@@ -96,7 +138,7 @@ def run_prog(instrutions):
 		elif op == 'xor':
 			state = xor(state, inst)
 		elif op == 'jg':
-			tate = jg(state, inst)
+			state = jg(state, inst)
 			dst = int(parts[1], 16)
 			s_one.add(state.eip == dst)
 			s_two.add(state.eip != dst)
@@ -105,6 +147,7 @@ def run_prog(instrutions):
 			dst = int(parts[1], 16)
 			s_one.add(state.eip == dst)
 			s_two.add(state.eip != dst)
+	# if it's possible to find an assignment such that the jump is taken/not taken, then predicate is not opaque
 	if s_two.check() == sat and s_one.check() == sat:
 		print('Not an opaque predicate!')
 	else:
