@@ -15,6 +15,7 @@ def jg(state, inst):
 	JNLE 	 Jump if not less or equal	signed	ZF = 0 and SF = OF
 	"""
 
+	state.eip = If(And(state.zf == 0, state.sf == state.of), dst, state.eip + 1)
 	return state
 
 if __name__ == "__main__":
