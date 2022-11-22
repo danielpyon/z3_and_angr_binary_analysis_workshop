@@ -1,4 +1,5 @@
 import angr
+import struct
 
 KABOOM_OFFSET = 0x133b
 
@@ -88,7 +89,33 @@ def phase_four(p, base):
 	args.reverse()
 	print(' '.join(args))
 	"""
-	pass	
+	state = p.factory.blank_state(addr=base+0x0000000000000c82)
+	sm = p.factory.simulation_manager(state)
+
+	# allocate memory for array
+	arr = state.solver.BVS('arr', 8*4*5) # int arr[5]
+	arr_addr = 0x1337
+	state.memory.store(arr_addr, arr)
+	
+	# set register rdi to array
+	state.add_constraints(state.regs.rdi == arr_addr)
+
+	# explore
+	sm.explore(find=base+0xf5d, avoid=base+KABOOM_OFFSET)
+	found = sm.found[0]
+
+	# use smt solver to find array ints
+	result = found.solver.eval(arr, cast_to=int)
+
+	# print results
+	args = []
+	for i in range(20):
+		val = (result >> 8 * 4 * i) & 0xFFFFFFFF
+		out = struct.unpack('<I', struct.pack('>I', val))[0]
+		args.append(str(out))
+	args.reverse()
+	print(' '.join(args))
+
 
 def phase_five(p, base):
 	pass
