@@ -8,6 +8,7 @@ def or_inst(state, inst):
 	op = parts[0]
 	lhs = parts[1][:-1]
 	rhs = parts[2]
+
 	"""Performs a bitwise inclusive OR operation between the destination (first) and source (second) 
 	operands and stores the result in the destination operand location. The source operand can be an 
 	immediate, a register, or a memory location; the destination operand can be a register or a memory 
@@ -15,8 +16,23 @@ def or_inst(state, inst):
 	of the OR instruction is set to 0 if both corresponding bits of the first and second operands are 0; 
 	otherwise, each bit is set to 1. """
 
+	# only regs for now
+	try:
+		new_val = getattr(state, lhs) ^ getattr(state, rhs)
+	except:
+		new_val = getattr(state, lhs) ^ int(rhs, 16)
+	
+	setattr(state, lhs, new_val)
 
 	"""The OF and CF flags are cleared; the SF, ZF, and PF flags are set according to the result. The state of the AF flag is undefined."""
+	state.of = False
+	state.cf = False
+	state.sf = If(new_val < 0, True, False)
+	state.zf = If(getattr(state, lhs) == 0, True, False)
+
+	# this isn't really accurate
+	state.eip += 1
+
 	return state
 
 if __name__ == "__main__":
