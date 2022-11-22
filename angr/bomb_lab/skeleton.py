@@ -47,7 +47,34 @@ def phase_two(p, base):
 	print(ret)
 
 def phase_three(p, base):
-	pass
+	state = p.factory.blank_state(addr=base+0xbe0)
+
+	arg0 = state.solver.BVS('arg0', 8*4)
+	arg1 = state.solver.BVS('arg1', 8*4)
+	arg2 = state.solver.BVS('arg2', 8*4)
+	arg3 = state.solver.BVS('arg3', 8*4)
+
+	state.regs.edi = arg0
+	state.regs.esi = arg1
+	state.regs.edx = arg2
+	state.regs.ecx = arg3
+
+	sm = p.factory.simulation_manager(state)
+	sm.explore(find=base+0xf5d, avoid=base+KABOOM_OFFSET)
+	found = sm.found[0]
+
+	answer = found.solver.eval(arg0, cast_to=int)
+	print(answer)
+
+	answer = found.solver.eval(arg1, cast_to=int)
+	print(answer)
+
+	answer = found.solver.eval(arg2, cast_to=int)
+	print(answer)
+	
+	answer = found.solver.eval(arg3, cast_to=int)
+	print(answer)
+
 
 def phase_four(p, base):
 	"""
