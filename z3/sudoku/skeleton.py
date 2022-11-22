@@ -51,7 +51,12 @@ def solve(puzzle):
         raise Exception('unsatisfiable!')
 
     m = s.model()
-    print(m)
+    solved = ''
+    for i in range(9):
+        for j in range(9):
+            assignment = m[board[i][j]]
+            solved += str(assignment)
+    return solved
 
 # Print a rather vague Suduko board
 def draw_puzzle(puzzle):
@@ -82,4 +87,4 @@ if __name__ == "__main__":
     # Solve the puzzle?
     solution = solve(puzzle)
     # Draw solved grid
-    # draw_puzzle(solution)
+    draw_puzzle(solution)
