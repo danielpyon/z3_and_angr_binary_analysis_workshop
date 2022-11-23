@@ -64,18 +64,12 @@ def phase_three(p, base):
 	sm.explore(find=base+0xf5d, avoid=base+KABOOM_OFFSET)
 	found = sm.found[0]
 
-	answer = found.solver.eval(arg0, cast_to=int)
-	print(answer)
-
-	answer = found.solver.eval(arg1, cast_to=int)
-	print(answer)
-
-	answer = found.solver.eval(arg2, cast_to=int)
-	print(answer)
-	
-	answer = found.solver.eval(arg3, cast_to=int)
-	print(answer)
-
+	args=[]
+	args.append(found.solver.eval(arg0, cast_to=int))
+	args.append(found.solver.eval(arg1, cast_to=int))
+	args.append(found.solver.eval(arg2, cast_to=int))
+	args.append(found.solver.eval(arg3, cast_to=int))
+	print(' '.join(args))
 
 def phase_four(p, base):
 	"""
@@ -109,7 +103,7 @@ def phase_four(p, base):
 
 	# print results
 	args = []
-	for i in range(20):
+	for i in range(5):
 		val = (result >> 8 * 4 * i) & 0xFFFFFFFF
 		out = struct.unpack('<I', struct.pack('>I', val))[0]
 		args.append(str(out))
@@ -118,7 +112,32 @@ def phase_four(p, base):
 
 
 def phase_five(p, base):
-	pass
+	state = p.factory.blank_state(addr=base+0xd1f)
+	sm = p.factory.simulation_manager(state)
+
+	# allocate memory for 2d array
+	arr = state.solver.BVS('arr', 8*4*6*6) # int[6][6]
+	arr_addr = 0x1337
+	state.memory.store(arr_addr, arr)
+
+	# set register rdi to array
+	state.add_constraints(state.regs.rdi == arr_addr)
+
+	# explore
+	sm.explore(find=base+0xf5d, avoid=base+KABOOM_OFFSET)
+	found = sm.found[0]
+
+	# solve constraint
+	result = found.solver.eval(arr, cast_to=int)
+
+	# print results
+	args = []
+	for i in range(36):
+		val = (result >> 8 * 4 * i) & 0xFFFFFFFF
+		out = struct.unpack('<I', struct.pack('>I', val))[0]
+		args.append(str(out))
+	args.reverse()
+	print(' '.join(args))
 
 def phase_six(p, base):
 	pass
