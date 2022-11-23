@@ -1,5 +1,8 @@
 import angr
 import struct
+import logging
+
+logging.getLogger('angr').propagate = False
 
 KABOOM_OFFSET = 0x133b
 
@@ -13,9 +16,10 @@ def phase_one(p, base):
 	# rdi still holds string
 	mem = found.memory.load(found.regs.rdi, 256)
 	answer = found.solver.eval(mem, cast_to=bytes)
-	out = answer[:answer.index(b'\x00')]
+	# out = answer[:answer.index(b'\x00')]
+	out = answer[:8]
 
-	print(out)
+	print(out.decode())
 
 def phase_two(p, base):
 	state = p.factory.blank_state(addr=base+0xb22)
@@ -45,7 +49,9 @@ def phase_two(p, base):
 		answer = found.solver.eval(arg, cast_to=bytes)
 		ret.append(answer[:answer.index(b'\x00')])
 	
-	print(ret)
+	ret = list(map(lambda x: x.decode(), ret))
+
+	print(' '.join(ret))
 
 def phase_three(p, base):
 	state = p.factory.blank_state(addr=base+0xbe0)
@@ -69,6 +75,7 @@ def phase_three(p, base):
 	args.append(found.solver.eval(arg1, cast_to=int))
 	args.append(found.solver.eval(arg2, cast_to=int))
 	args.append(found.solver.eval(arg3, cast_to=int))
+	args = list(map(str, args))
 	print(' '.join(args))
 
 def phase_four(p, base):
@@ -140,7 +147,20 @@ def phase_five(p, base):
 	print(' '.join(args))
 
 def phase_six(p, base):
-	pass
+	state = p.factory.blank_state(addr=base+0xd9e)
+	
+	arr = state.solver.BVS('arr', 8 * 20)
+	arr_addr = 0x1337
+	state.memory.store(arr_addr, arr)
+	state.add_constraints(state.regs.rdi == arr_addr)
+
+	sm = p.factory.simulation_manager(state)
+	sm.explore(find=base+0xf5d, avoid=base+KABOOM_OFFSET, enable_veritesting=True)
+	found = sm.found[0]
+
+	# rdi still holds string
+	answer = found.solver.eval(arr, cast_to=bytes)
+	print(answer.decode())
 
 if __name__ == "__main__":
 	p = angr.Project('bomb',load_options={"auto_load_libs":False})
