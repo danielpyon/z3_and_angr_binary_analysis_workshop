@@ -1,0 +1,3 @@
+# buckeyeCTF 2022: angry
+
+this seems solvable with angr...
